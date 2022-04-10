@@ -1,5 +1,5 @@
-import { FC, useReducer } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { FC, useEffect, useReducer } from "react";
+import { entriesApi } from "../../apis";
 import { Entry } from "../../interfaces";
 import { EntriesContext, entriesReducer } from "./";
 
@@ -8,57 +8,37 @@ export interface EntriesState {
 }
 
 const Entries_INITIAL_STATE: EntriesState = {
-  entries: [
-    {
-      _id: uuidv4(),
-      description:
-        "Pendiente:Lorem ipsum dolor, sit amet consectetur adipisicing elit.",
-      status: "pending",
-      createdAt: Date.now(),
-    },
-    {
-      _id: uuidv4(),
-      description:
-        "InProgress:Reprehenderit officia esse Lorem excepteur ullamco eu sunt.",
-      status: "in-progress",
-      createdAt: Date.now() - 1000000,
-    },
-    {
-      _id: uuidv4(),
-      description:
-        "Finished:Amet deserunt aliquip veniam proident ut dolore officia.",
-      status: "finished",
-      createdAt: Date.now() - 100000,
-    },
-  ],
+  entries: [],
 };
 
 export const EntriesProvider: FC = ({ children }) => {
   const [state, dispatch] = useReducer(entriesReducer, Entries_INITIAL_STATE);
 
-  const addNewEntry = ( description: string) => {
-    const newEntry: Entry = {
-      _id: uuidv4(),
-      description,
-      status:'pending',
-      createdAt: Date.now()
-    }
+  const addNewEntry = async (description: string) => {
+
+    const { data } = await entriesApi.post<Entry>('/entries', { description })
 
     dispatch({
-      type: '[Entry] - Add-Entry',
-      payload: newEntry
-    })
-  }
-  
+      type: "[Entry] - Add-Entry",
+      payload: data,
+    });
+  };
+
   const updateEntry = (entry: Entry) => {
-
     dispatch({
-      type: '[Entry] - Entry-Updated',
-      payload: entry
-    })
+      type: "[Entry] - Entry-Updated",
+      payload: entry,
+    });
+  };
 
-  }
+  const refreshEntries = async () => {
+    const { data } = await entriesApi.get<Entry[]>('/entries')
+    dispatch({ type: '[Entry] - Refresh-Data', payload: data })
+  };
 
+  useEffect(() => {
+    refreshEntries();
+  }, []);
 
   return (
     <EntriesContext.Provider
@@ -66,7 +46,7 @@ export const EntriesProvider: FC = ({ children }) => {
         ...state,
         // Methods
         addNewEntry,
-        updateEntry
+        updateEntry,
       }}
     >
       {children}
