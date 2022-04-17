@@ -23,32 +23,47 @@ export default function handler (req: NextApiRequest, res: NextApiResponse<Data>
 }
 
 const getEntries = async (res: NextApiResponse<Data>) => {
-  
-  await db.connect()
 
-  const entries = await Entry.find().sort({ createdAt: 'ascending'})
+  try {
+    await db.connect()
+    
+    const entries = await Entry.find().sort({ createdAt: 'ascending'})
+    
+    await db.disconnect()
 
-  await db.disconnect()
+    res.status(200).json(entries)
+  } catch (error) {
+    
+    await db.disconnect()
+    console.log(error)
 
-  res.status(201).json(entries)
+    return res.status(500).json({ message: 'Algo salio mal' })
+  }
 }
 
 
 const createEntry = async (req:NextApiRequest, res:NextApiResponse<Data>) => {
 
-  const { description } = req.body
-
-  await db.connect()
+  const { description = '' } = req.body
 
   const entry = new Entry({
     description,
-    createdAt: Date.now(),
-    status: 'pending'
+    createdAt: Date.now()
   })
+  
+  try {
+    await db.connect()
+    
+    await entry.save()
 
-  await entry.save()
+    await db.disconnect()
 
-  await db.disconnect()
+    return res.status(201).json(entry)
+  } catch (error) {
+    await db.disconnect()
+    console.log(error)
 
-  res.status(201).json(entry)
+    return res.status(500).json({ message: 'Algo salio mal' })
+  }
+
 }

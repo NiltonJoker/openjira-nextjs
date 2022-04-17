@@ -13,7 +13,7 @@ export const EntryCard:FC<Props> = ({ entry }) => {
   const { startDragging, endDragging } = useContext(UIContext)
 
   const onDragStart = ( event: DragEvent) => {
-    console.log(event)
+
     event.dataTransfer.setData("text", entry._id);
 
     startDragging()
